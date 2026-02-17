@@ -4,16 +4,16 @@ import socket
 def on_key_event(event):
     if event.event_type == keyboard.KEY_DOWN:
         sendBytes = ''
-        if event.name == '1':
+        if event.name == 'w':
             # Send trigger
             sendBytes = b"1"
-        elif event.name == '2':
+        elif event.name == 'd':
             # Send trigger
             sendBytes = b"2"
-        elif event.name == '3':
+        elif event.name == 's':
             # Send trigger
             sendBytes = b"3"
-        elif event.name == 'l':
+        elif event.name == 'a':
             # Send trigger
             sendBytes = b"4"
 
