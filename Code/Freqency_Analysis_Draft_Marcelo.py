@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import ttest_rel
 
-bdf_path = r"C:\Users\NTC\Documents\Bio-Fabulous-Unicorn\Recordings\Flicker recordings\Wet_OSCAR+\UnicornRawDataRecorder_17_02_2026_16_58_20.bdf"
+bdf_path = r"C:\Users\NTC\Documents\Bio-Fabulous-Unicorn\Recordings\Flicker recordings\Dry_OSCAR+\UnicornRawDataRecorder_17_02_2026_16_19_59.bdf"
 
 raw = mne.io.read_raw_bdf(bdf_path, preload=True, verbose=True)
 
