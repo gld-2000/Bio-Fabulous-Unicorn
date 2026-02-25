@@ -12,14 +12,12 @@ import pygame
 WINDOW_SIZE = 2    #Size of scrolling window to be measured (in seconds) (SHOULD BE EVENLY DIVISIBLE BY 0.04 to ensure that we have an even number of samples at 250Hz)
 MEASUREMENT_INTERVAL = 0.5   #Time between measurements (in seconds) (SHOULD BE EVENLY DIVISIBLE BY 0.04 to ensure that we have an even number of samples at 250Hz)
 NUM_INTERVALS = int(WINDOW_SIZE // MEASUREMENT_INTERVAL)   #Number of intervals required to hold WINDOW_SIZE seconds of data
-HEADSET_SERIAL_NUMBER = 'UN-2024.08.43'   #Serial number of the headset to connect to
-TEST_SIGNAL = False   #Should be set to false when collecting real data
-#Frequencies as directions
-FREQ_UP    = 15 #Hz
-FREQ_DOWN  = 10 #Hz
-FREQ_LEFT  = 7.5 #Hz
-FREQ_RIGHT = 6 #Hz
 
+#Frequencies as directions
+FREQ_UP    = 13.5 #Hz
+FREQ_DOWN  = 12 #Hz
+FREQ_LEFT  = 10 #Hz
+FREQ_RIGHT = 8.5 #Hz
 
 #Data analysis variables
 numHarmonics = 2    #The number of harmonics to consider for the CCA analysis
@@ -34,10 +32,13 @@ BRUSH_RADIUS = 8              # size of the brush in pixels
 CANVAS_WIDTH  = 800 #pixels
 CANVAS_HEIGHT = 600 #pixels
 
+#Other variables
 # cursor starts in the middle of the screen
 cursor_x = CANVAS_WIDTH  // 2
 cursor_y = CANVAS_HEIGHT // 2
 
+HEADSET_SERIAL_NUMBER = 'UN-2024.08.43'   #Serial number of the headset to connect to
+TEST_SIGNAL = False   #Should be set to false when collecting real data
 
 ## Safety checks
 if (UnicornPy.SamplingRate != 250):
@@ -145,11 +146,11 @@ args: eeg_window - EEG data with shape (numChannels, numSamples)
 returns: A list of the scores for the given frequencies
 """
 def detect_ssvep(eeg_window, ref, freqs):
-    scores = [len(freqs)]
+    scores = np.empty(len(freqs), dtype=np.float64)
     for i in range(len(freqs)):
         cca = CCA(n_components=1)
-        cca.fit(eeg_window.T, ref)      #Must transform since sklearn.cross_decomposition.CCA expects input shape like this:(n_samples, n_features(channels here))
-        U, V = cca.transform(eeg_window.T, ref)
+        cca.fit(eeg_window.T, ref[i])      #Must transform since sklearn.cross_decomposition.CCA expects input shape like this:(n_samples, n_features(channels here))
+        U, V = cca.transform(eeg_window.T, ref[i])
         corr = np.corrcoef(U.T, V.T)[0,1]
         scores[i] = corr
     return scores
@@ -176,8 +177,12 @@ Update the pygame drawing window to display the new direction
 
 args: freq - dominant frequency
     direction - String of either 'up', 'down', 'left', or 'right'
+    cursor_x - X-position of the cursor
+    cursor_y - Y-position of the cursor
+
+returns: cursor_x, cursor_y
 """
-def updateDrawingWindow(freq, direction):
+def updateDrawingWindow(freq, direction, cursor_x, cursor_y):
     # check if the user closed the window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -215,13 +220,15 @@ def updateDrawingWindow(freq, direction):
     label = font.render(f"Freq: {freq} Hz  →  Direction: {direction}", True, (50, 50, 50))
     screen.blit(label, (10, 10))
 
-    pygame.display.flip()  
+    pygame.display.flip()
+
+    return cursor_x, cursor_y
 
 
 ## Main Code
 
 #help(UnicornPy)
-print("Api Version: ", UnicornPy.GetApiVersion())
+#print("Api Version: ", UnicornPy.GetApiVersion())
 
 #Check bluetooth adapter
 btAdapter = UnicornPy.GetBluetoothAdapterInfo()
@@ -254,14 +261,13 @@ headset.SetConfiguration(channelConfigs)
 
 print("Number of active channels: ", headset.GetNumberOfAcquiredChannels())
 
-
 #Calculate the number of scans to be acquired per interval, and ensure that is is an integer (rounding up if necessary)
 scansPerInterval = int(np.ceil(MEASUREMENT_INTERVAL * UnicornPy.SamplingRate))
 
 #Allocate the memory required to hold the acquired data
 dataBuffer = allocateBuffer(headset.GetNumberOfAcquiredChannels(),
                             numSamplesPerInterval = scansPerInterval)
-data = np.zeros((headset.GetNumberOfAcquiredChannels()*scansPerInterval*NUM_INTERVALS), dtype=np.uint32)
+data = np.empty((headset.GetNumberOfAcquiredChannels()*scansPerInterval*NUM_INTERVALS), dtype=np.uint32)
 
 print("Buffer allocated with size", len(dataBuffer), "bytes to record intervals of", MEASUREMENT_INTERVAL, "seconds.")
 
@@ -269,13 +275,11 @@ print("Buffer allocated with size", len(dataBuffer), "bytes to record intervals 
 #Create the reference waves for CCA
 window_duration = (scansPerInterval * NUM_INTERVALS) / UnicornPy.SamplingRate
 referenceWaves = []
-i = 0
 for f in freqsOfInterest:
-    referenceWaves[i] = generate_reference(freq = f,
+    referenceWaves.append(generate_reference(freq = f,
                                            fs = UnicornPy.SamplingRate,
                                            window_len = window_duration,
-                                           harmonics = numHarmonics)
-    i += 1
+                                           harmonics = numHarmonics))
 
 
 #Initialize drawing window
@@ -302,11 +306,12 @@ try:
         endIndex = (i+1)*scansPerInterval*headset.GetNumberOfAcquiredChannels()
         data[startInted:endIndex] = np.frombuffer(dataBuffer, dtype=np.uint32)
 
-    #Reshape the array to include 8 channels of data
+    #Reshape the array to include channels of data
     data = data.reshape((headset.GetNumberOfAcquiredChannels(), -1), order='F')
-
+    
 
     #Load new data in continuously
+    start = 0   #For timing purposes
     while True: 
         #Placeholder for the data processing functions
         scores = detect_ssvep(eeg_window = data,
@@ -317,15 +322,20 @@ try:
         identifiedFreq = classifyFromScores(scores, freqsOfInterest)
 
         #Update the drawing window based on the classification
-        updateDrawingWindow(identifiedFreq, get_direction(identifiedFreq))
+        cursor_x, cursor_y = updateDrawingWindow(identifiedFreq, get_direction(identifiedFreq), cursor_x, cursor_y)
+
+        #Time the function
+        end = time.perf_counter_ns()
+        print("Time elaspsed:", (end-start)*10e-6, "ms")
 
         #Collect the new interval of data from the headset
         headset.GetData(scansPerInterval, dataBuffer, len(dataBuffer))
         
+        start = time.perf_counter_ns()
         #Delete the old data and add the new data to the end of the array
         #Manipulate raw data into the correct format and add it to the end of the array (same manipulation method as above, just in one line)
         data = np.concatenate((data[:, scansPerInterval:scansPerInterval*NUM_INTERVALS], np.frombuffer(dataBuffer, dtype=np.uint32).reshape((headset.GetNumberOfAcquiredChannels(), -1), order='F')), axis=1)
-
+        
         #Print the real-time data for debugging purposes
         # plt.cla()
         # plt.plot(data[0,:])
