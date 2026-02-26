@@ -2,14 +2,43 @@ import UnicornPy
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+# Data acquisition imports
+from sklearn.cross_decomposition import CCA
+#Cursor imports
+import pygame
 
 
 ## Relevant variables
 WINDOW_SIZE = 2    #Size of scrolling window to be measured (in seconds) (SHOULD BE EVENLY DIVISIBLE BY 0.04 to ensure that we have an even number of samples at 250Hz)
 MEASUREMENT_INTERVAL = 0.5   #Time between measurements (in seconds) (SHOULD BE EVENLY DIVISIBLE BY 0.04 to ensure that we have an even number of samples at 250Hz)
 NUM_INTERVALS = int(WINDOW_SIZE // MEASUREMENT_INTERVAL)   #Number of intervals required to hold WINDOW_SIZE seconds of data
+
+#Frequencies as directions
+FREQ_UP    = 13.5 #Hz
+FREQ_DOWN  = 12 #Hz
+FREQ_LEFT  = 10 #Hz
+FREQ_RIGHT = 8.5 #Hz
+
+#Data analysis variables
+numHarmonics = 2    #The number of harmonics to consider for the CCA analysis
+freqsOfInterest = [FREQ_RIGHT, FREQ_LEFT, FREQ_DOWN, FREQ_UP]  #SSVEP frequencies of interest
+
+#Cursor movement variables
+CURSOR_SPEED   = 50    # how many pixels the cursor moves each step
+# brush settings
+BRUSH_COLOR  = (30, 30, 200)  # blue
+BRUSH_RADIUS = 8              # size of the brush in pixels
+# canvas size 
+CANVAS_WIDTH  = 800 #pixels
+CANVAS_HEIGHT = 600 #pixels
+
+#Other variables
+# cursor starts in the middle of the screen
+cursor_x = CANVAS_WIDTH  // 2
+cursor_y = CANVAS_HEIGHT // 2
+
 HEADSET_SERIAL_NUMBER = 'UN-2024.08.43'   #Serial number of the headset to connect to
-TEST_SIGNAL = True   #Should be set to false when collecting real data
+TEST_SIGNAL = False   #Should be set to false when collecting real data
 
 ## Safety checks
 if (UnicornPy.SamplingRate != 250):
@@ -96,12 +125,110 @@ def danceLEDs(headset):
     headset.SetDigitalOutputs(0b00000000)
 
 
+##Data Analysis Functions
+"""Generates the reference sine waves for the CCA algorithm"""
+def generate_reference(freq, fs, window_len, harmonics=2):
+    t = np.arange(0, window_len, 1/fs) #time_vector from 0 to window_length with step size = 1 / sampling_rate
+    ref = []
+    for h in range(1, harmonics+1):
+        ref.append(np.sin(2*np.pi*freq*h*t))
+        ref.append(np.cos(2*np.pi*freq*h*t))
+    return np.array(ref).T  #shape: (samples, 2*harmonics)
+    #transpose
+
+"""
+Detect frequency using CCA
+
+args: eeg_window - EEG data with shape (numChannels, numSamples)
+    ref - Reference waveforms for CCA
+    freqs - The frequencies of interest for classification
+
+returns: A list of the scores for the given frequencies
+"""
+def detect_ssvep(eeg_window, ref, freqs):
+    scores = np.empty(len(freqs), dtype=np.float64)
+    for i in range(len(freqs)):
+        cca = CCA(n_components=1)
+        cca.fit(eeg_window.T, ref[i])      #Must transform since sklearn.cross_decomposition.CCA expects input shape like this:(n_samples, n_features(channels here))
+        U, V = cca.transform(eeg_window.T, ref[i])
+        corr = np.corrcoef(U.T, V.T)[0,1]
+        scores[i] = corr
+    return scores
+
+def classifyFromScores(scores, freqs):
+    return freqs[np.argmax(scores)]
+
+##Cursor Movement Functions
+"""
+input CCA classification
+each number is a detected frequency in Hz  in order over time
+
+which direction are we moving in based on the frequency
+"""
+def get_direction(freq):
+    if freq == FREQ_UP:    return 'up'
+    if freq == FREQ_DOWN:  return 'down'
+    if freq == FREQ_LEFT:  return 'left'
+    if freq == FREQ_RIGHT: return 'right'
+    return None 
+
+"""
+Update the pygame drawing window to display the new direction
+
+args: freq - dominant frequency
+    direction - String of either 'up', 'down', 'left', or 'right'
+    cursor_x - X-position of the cursor
+    cursor_y - Y-position of the cursor
+
+returns: cursor_x, cursor_y
+"""
+def updateDrawingWindow(freq, direction, cursor_x, cursor_y):
+    # check if the user closed the window
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+    
+    # remember where the cursor was before moving
+    prev_x = cursor_x
+    prev_y = cursor_y
+
+    # move the cursor in that direction
+    if direction == 'up':    cursor_y -= CURSOR_SPEED
+    if direction == 'down':  cursor_y += CURSOR_SPEED
+    if direction == 'left':  cursor_x -= CURSOR_SPEED
+    if direction == 'right': cursor_x += CURSOR_SPEED
+
+    # make sure the cursor doesn't go outside the window
+    cursor_x = max(0, min(CANVAS_WIDTH,  cursor_x))
+    cursor_y = max(0, min(CANVAS_HEIGHT, cursor_y))
+
+    # draw a line from old position to new position to create a smooth brushstroke
+    pygame.draw.line(drawing_surface, BRUSH_COLOR, (prev_x, prev_y), (cursor_x, cursor_y), BRUSH_RADIUS * 2)
+    # draw a circle at the new position to give the stroke smooth rounded ends
+    pygame.draw.circle(drawing_surface, BRUSH_COLOR, (cursor_x, cursor_y), BRUSH_RADIUS)
+
+    # drawnig
+    # paste the permanent drawing surface first (contains all brushstrokes so far)
+    screen.blit(drawing_surface, (0, 0))
+
+    # draw the cursor as red circle
+    pygame.draw.circle(screen, (220, 50, 50), (cursor_x, cursor_y), 10, 2)
+    pygame.draw.line(screen, (220, 50, 50), (cursor_x - 15, cursor_y), (cursor_x + 15, cursor_y), 1)
+    pygame.draw.line(screen, (220, 50, 50), (cursor_x, cursor_y - 15), (cursor_x, cursor_y + 15), 1)
+
+    # show text on screen: what frequency was detected and which direction
+    label = font.render(f"Freq: {freq} Hz  →  Direction: {direction}", True, (50, 50, 50))
+    screen.blit(label, (10, 10))
+
+    pygame.display.flip()
+
+    return cursor_x, cursor_y
 
 
 ## Main Code
 
 #help(UnicornPy)
-print("Api Version: ", UnicornPy.GetApiVersion())
+#print("Api Version: ", UnicornPy.GetApiVersion())
 
 #Check bluetooth adapter
 btAdapter = UnicornPy.GetBluetoothAdapterInfo()
@@ -134,16 +261,36 @@ headset.SetConfiguration(channelConfigs)
 
 print("Number of active channels: ", headset.GetNumberOfAcquiredChannels())
 
-
 #Calculate the number of scans to be acquired per interval, and ensure that is is an integer (rounding up if necessary)
 scansPerInterval = int(np.ceil(MEASUREMENT_INTERVAL * UnicornPy.SamplingRate))
 
 #Allocate the memory required to hold the acquired data
 dataBuffer = allocateBuffer(headset.GetNumberOfAcquiredChannels(),
                             numSamplesPerInterval = scansPerInterval)
-data = np.zeros((headset.GetNumberOfAcquiredChannels()*scansPerInterval*NUM_INTERVALS), dtype=np.uint32)
+data = np.empty((headset.GetNumberOfAcquiredChannels()*scansPerInterval*NUM_INTERVALS), dtype=np.uint32)
 
 print("Buffer allocated with size", len(dataBuffer), "bytes to record intervals of", MEASUREMENT_INTERVAL, "seconds.")
+
+
+#Create the reference waves for CCA
+window_duration = (scansPerInterval * NUM_INTERVALS) / UnicornPy.SamplingRate
+referenceWaves = []
+for f in freqsOfInterest:
+    referenceWaves.append(generate_reference(freq = f,
+                                           fs = UnicornPy.SamplingRate,
+                                           window_len = window_duration,
+                                           harmonics = numHarmonics))
+
+
+#Initialize drawing window
+pygame.init()
+screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
+pygame.display.set_caption("BCI Cursor")
+font = pygame.font.SysFont('Arial', 20)
+
+# this surface remembers every brushstroke permanently and never gets wiped
+drawing_surface = pygame.Surface((CANVAS_WIDTH, CANVAS_HEIGHT))
+drawing_surface.fill((255, 255, 255))  # start with a white blank canvas
 
 
 #Set up a try/finally block to ensure that we stop acquisition and clear the buffer if the program terminates for any reason (including errors)
@@ -159,22 +306,36 @@ try:
         endIndex = (i+1)*scansPerInterval*headset.GetNumberOfAcquiredChannels()
         data[startInted:endIndex] = np.frombuffer(dataBuffer, dtype=np.uint32)
 
-    #Reshape the array to include 8 channels of data
+    #Reshape the array to include channels of data
     data = data.reshape((headset.GetNumberOfAcquiredChannels(), -1), order='F')
-
+    
 
     #Load new data in continuously
+    start = 0   #For timing purposes
     while True: 
         #Placeholder for the data processing functions
-        #time.sleep(0.2)
+        scores = detect_ssvep(eeg_window = data,
+                              ref = referenceWaves,
+                              freqs = freqsOfInterest)
         
+        #Identify the dominant frequency
+        identifiedFreq = classifyFromScores(scores, freqsOfInterest)
+
+        #Update the drawing window based on the classification
+        cursor_x, cursor_y = updateDrawingWindow(identifiedFreq, get_direction(identifiedFreq), cursor_x, cursor_y)
+
+        #Time the function
+        end = time.perf_counter_ns()
+        print("Time elaspsed:", (end-start)*10e-6, "ms")
+
         #Collect the new interval of data from the headset
         headset.GetData(scansPerInterval, dataBuffer, len(dataBuffer))
         
+        start = time.perf_counter_ns()
         #Delete the old data and add the new data to the end of the array
         #Manipulate raw data into the correct format and add it to the end of the array (same manipulation method as above, just in one line)
         data = np.concatenate((data[:, scansPerInterval:scansPerInterval*NUM_INTERVALS], np.frombuffer(dataBuffer, dtype=np.uint32).reshape((headset.GetNumberOfAcquiredChannels(), -1), order='F')), axis=1)
-
+        
         #Print the real-time data for debugging purposes
         # plt.cla()
         # plt.plot(data[0,:])
