@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-bdf_path = r"C:\Users\NTC\Documents\Bio-Fabulous-Unicorn\Recordings\Flicker recordings\Sin_Dry_OSCAR+\UnicornRecorder_25_02_2026_15_11_24.bdf"
+bdf_path = r"C:\Users\NTC\Documents\Bio-Fabulous-Unicorn\Recordings\Flicker recordings\Sin_Dry_Neutral\UnicornRecorder_25_02_2026_15_18_46.bdf"
 
 raw = mne.io.read_raw_bdf(bdf_path, preload=True, verbose=False)
 
