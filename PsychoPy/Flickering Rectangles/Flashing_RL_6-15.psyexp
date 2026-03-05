@@ -78,8 +78,8 @@
     <Param val="pyglet" valType="str" updates="None" name="winBackend"/>
   </Settings>
   <Routines>
-    <Routine name="finish">
-      <RoutineSettingsComponent name="finish" plugin="None">
+    <Routine name="setup">
+      <RoutineSettingsComponent name="setup" plugin="None">
         <Param val="none" valType="str" updates="None" name="backgroundFit"/>
         <Param val="" valType="str" updates="None" name="backgroundImg"/>
         <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
@@ -88,40 +88,47 @@
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="" valType="code" updates="None" name="durationEstim"/>
         <Param val="False" valType="code" updates="None" name="forceNonSlip"/>
-        <Param val="finish" valType="code" updates="None" name="name"/>
+        <Param val="setup" valType="code" updates="None" name="name"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="constant" name="skipIf"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
-      <TextComponent name="text_finish" plugin="None">
-        <Param val="white" valType="color" updates="constant" name="color"/>
-        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
-        <Param val="1" valType="num" updates="constant" name="contrast"/>
+      <CodeComponent name="makeSchedule" plugin="None">
+        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="import numpy as np&amp;#10;import pandas as pd&amp;#10;import random&amp;#10;&amp;#10;# ---- load freqs from CSV ----&amp;#10;freq_df = pd.read_csv('freqs_6_15.csv')  # file in same folder as .psyexp&amp;#10;freq_list = [float(x) for x in freq_df['freq'].tolist()]&amp;#10;assert len(freq_list) == 10, &quot;Expected 10 freqs (6..15).&quot;&amp;#10;&amp;#10;#BUILD PART 1&amp;#10;freqs = freq_list[:]&amp;#10;random.shuffle(freqs)&amp;#10;&amp;#10;left_set_p1 = freqs[:5]&amp;#10;right_set_p1 = freqs[5:]&amp;#10;&amp;#10;#Randomize order within each side of part 1&amp;#10;random.shuffle(left_set_p1)&amp;#10;random.shuffle(right_set_p1)&amp;#10;&amp;#10;#balanced randomized cue sequence&amp;#10;cue_seq_p1 = ['L'] * 5 + ['R'] * 5&amp;#10;random.shuffle(cue_seq_p1)&amp;#10;&amp;#10;#Build 10 Part 1 trials&amp;#10;#Maintain next uncued frequency index for each side&amp;#10;#Maintain current displayed frequency for each side, which advances after cue&amp;#10;l_idx = 0&amp;#10;r_idx = 0&amp;#10;l_disp_idx = 0&amp;#10;r_disp_idx = 0&amp;#10;&amp;#10;part1 = []&amp;#10;&amp;#10;for trial_num, cue_side in enumerate(cue_seq_p1, start=1):&amp;#10;    #current displayed freqs&amp;#10;    f_left_display = left_set_p1[l_disp_idx]&amp;#10;    f_right_display = right_set_p1[r_disp_idx]&amp;#10;    &amp;#10;    if cue_side == 'L':&amp;#10;        cue_freq = left_set_p1[l_idx]&amp;#10;        cue_text = '←'&amp;#10;        #left target displays cued freq&amp;#10;        f_left_display = cue_freq&amp;#10;        #advance left cue pointer&amp;#10;        l_idx += 1&amp;#10;        #after cue, left frequency changes next trial&amp;#10;        l_disp_idx = min(l_idx, 4)&amp;#10;    else: #cue_side == 'R'&amp;#10;        cue_freq = right_set_p1[r_idx]&amp;#10;        cue_text = '→'&amp;#10;        #right target displays cued freq&amp;#10;        f_right_display = cue_freq&amp;#10;        #advance right cue pointer&amp;#10;        r_idx += 1&amp;#10;        #after cue, right frequency changes next trial&amp;#10;        r_disp_idx = min(r_idx, 4)&amp;#10;        &amp;#10;    part1.append({&amp;#10;        'part': 1,&amp;#10;        'trial_num': trial_num,&amp;#10;        'f_left': float(f_left_display),&amp;#10;        'f_right': float(f_right_display),&amp;#10;        'cue_side': cue_side,&amp;#10;        'cue_freq': float(cue_freq),&amp;#10;        'cue_text': cue_text&amp;#10;    })&amp;#10;&amp;#10;#Assertion check assert sorted([t['cue_freq'] for t in part1]) == sorted(freq_list), &quot;Part 1 Cue Coverage Error&quot;&amp;#10;assert sum(t['cue_side'] == 'L' for t in part1) == 5&amp;#10;assert sum(t['cue_side'] == 'R' for t in part1) == 5&amp;#10;&amp;#10;#BUILD PART 2&amp;#10;#swap sides&amp;#10;left_set_p2 = right_set_p1[:]&amp;#10;right_set_p2 = left_set_p1[:]&amp;#10;#randomize order&amp;#10;random.shuffle(left_set_p2)&amp;#10;random.shuffle(right_set_p2)&amp;#10;#balanced randomized cue sequence&amp;#10;cue_seq_p2 = ['L'] * 5 + ['R'] * 5&amp;#10;random.shuffle(cue_seq_p2)&amp;#10;&amp;#10;#Build 10 Part 2 trials&amp;#10;#Maintain next uncued frequency index for each side&amp;#10;#Maintain current displayed frequency for each side, which advances after cue&amp;#10;l_idx = 0&amp;#10;r_idx = 0&amp;#10;l_disp_idx = 0&amp;#10;r_disp_idx = 0&amp;#10;&amp;#10;part2 = []&amp;#10;&amp;#10;for trial_num, cue_side in enumerate(cue_seq_p2, start=1):&amp;#10;    f_left_display = left_set_p2[l_disp_idx]&amp;#10;    f_right_display = right_set_p2[r_disp_idx]&amp;#10;    &amp;#10;    if cue_side == 'L':&amp;#10;        cue_freq = left_set_p2[l_idx]&amp;#10;        cue_text = '←'&amp;#10;        f_left_display = cue_freq&amp;#10;        &amp;#10;        l_idx += 1&amp;#10;        l_disp_idx = min(l_idx, 4)&amp;#10;    &amp;#10;    else: #cue_side =='R'&amp;#10;        cue_freq = right_set_p2[r_idx]&amp;#10;        cue_text = '→'&amp;#10;        f_right_display = cue_freq&amp;#10;        &amp;#10;        r_idx += 1&amp;#10;        r_disp_idx = min(r_idx, 4)&amp;#10;    &amp;#10;    part2.append({&amp;#10;        'part': 2,&amp;#10;        'trial_num': trial_num,&amp;#10;        'f_left': float(f_left_display),&amp;#10;        'f_right': float(f_right_display),&amp;#10;        'cue_side': cue_side,&amp;#10;        'cue_freq': float(cue_freq),&amp;#10;        'cue_text': cue_text&amp;#10;    })&amp;#10;&amp;#10;#Assertion checks&amp;#10;# Sanity checks for Part 2 (all 10 frequencies cued exactly once)&amp;#10;assert sorted([t['cue_freq'] for t in part2]) == sorted(freq_list), &quot;Part 2 cue coverage error&quot;&amp;#10;assert sum(t['cue_side'] == 'L' for t in part2) == 5&amp;#10;assert sum(t['cue_side'] == 'R' for t in part2) == 5&amp;#10;&amp;#10;all_cued = [t['cue_freq'] for t in part1] + [t['cue_freq'] for t in part2]&amp;#10;for f in freq_list:&amp;#10;    assert all_cued.count(f) == 2, f&quot;Frequency {f} not cued twice across parts&quot;&amp;#10;&amp;#10;# Indices for loopP1/loopP2 access in trial routine&amp;#10;thisExp.p1_i = 0&amp;#10;thisExp.p2_i = 0&amp;#10;&amp;#10;#Debug print for Runner console&amp;#10;print(&quot;\nPART 1&quot;)&amp;#10;for r in part1:&amp;#10;    print(r)&amp;#10;print(&quot;\nPART 2&quot;)&amp;#10;for r in part2:&amp;#10;    print(r)&amp;#10;&amp;#10;" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Py" valType="str" updates="None" name="Code Type"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="False" valType="code" updates="constant" name="draggable"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="None" valType="str" updates="constant" name="flip"/>
-        <Param val="Arial" valType="str" updates="constant" name="font"/>
-        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
-        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
-        <Param val="text_finish" valType="code" updates="None" name="name"/>
-        <Param val="" valType="num" updates="constant" name="opacity"/>
-        <Param val="0" valType="num" updates="constant" name="ori"/>
-        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="0.0" valType="code" updates="None" name="startVal"/>
-        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="2.0" valType="code" updates="constant" name="stopVal"/>
-        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="Finish" valType="str" updates="constant" name="text"/>
-        <Param val="from exp settings" valType="str" updates="None" name="units"/>
-        <Param val="" valType="code" updates="None" name="validator"/>
-        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
-      </TextComponent>
+        <Param val="makeSchedule" valType="code" updates="None" name="name"/>
+      </CodeComponent>
+      <CodeComponent name="socket" plugin="None">
+        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="import socket&amp;#10;&amp;#10;UDP_IP = &quot;127.0.0.1&quot;&amp;#10;UDP_PORT = 1000&amp;#10;udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)&amp;#10;&amp;#10;def trig_from_freq(freq_hz: float) -&gt; int:&amp;#10;    # 6.0 -&gt; 60, 13.5 -&gt; 135, 5.5 -&gt; 55, etc.&amp;#10;    return int(round(float(freq_hz) * 10))&amp;#10;&amp;#10;def send_trigger(code: int):&amp;#10;    # send ASCII bytes; matches earlier recorder style (b&quot;1&quot;, b&quot;2&quot;, etc.)&amp;#10;    udp_sock.sendto(str(int(code)).encode(&quot;ascii&quot;), (UDP_IP, UDP_PORT))" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="import * as socket from 'socket';&amp;#10;UDP_IP = &quot;127.0.0.1&quot;;&amp;#10;UDP_PORT = 1000;&amp;#10;udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);&amp;#10;function trig_from_freq(freq_hz) {&amp;#10;    return Number.parseInt(util.round((Number.parseFloat(freq_hz) * 10)));&amp;#10;}&amp;#10;function send_trigger(code) {&amp;#10;    udp_sock.sendto(Number.parseInt(code).toString().encode(&quot;ascii&quot;), [UDP_IP, UDP_PORT]);&amp;#10;}&amp;#10;" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Py" valType="str" updates="None" name="Code Type"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="try:&amp;#10;    udp_sock.close()&amp;#10;except Exception:&amp;#10;    pass" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="socket" valType="code" updates="None" name="name"/>
+      </CodeComponent>
     </Routine>
     <Routine name="ready">
       <RoutineSettingsComponent name="ready" plugin="None">
@@ -288,7 +295,7 @@
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
         <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="14.0" valType="code" updates="None" name="startVal"/>
+        <Param val="10.0" valType="code" updates="None" name="startVal"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="1.0" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
@@ -315,7 +322,7 @@
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
         <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="14.0" valType="code" updates="None" name="startVal"/>
+        <Param val="10.0" valType="code" updates="None" name="startVal"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="1.0" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
@@ -378,33 +385,6 @@
         <Param val="" valType="code" updates="None" name="validator"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
-      <TextComponent name="expText" plugin="None">
-        <Param val="white" valType="color" updates="constant" name="color"/>
-        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
-        <Param val="1" valType="num" updates="constant" name="contrast"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="False" valType="code" updates="constant" name="draggable"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="None" valType="str" updates="constant" name="flip"/>
-        <Param val="Arial" valType="str" updates="constant" name="font"/>
-        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
-        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
-        <Param val="expText" valType="code" updates="None" name="name"/>
-        <Param val="" valType="num" updates="constant" name="opacity"/>
-        <Param val="0" valType="num" updates="constant" name="ori"/>
-        <Param val="(0, -0.9)" valType="list" updates="constant" name="pos"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="0.0" valType="code" updates="None" name="startVal"/>
-        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="3.0" valType="code" updates="constant" name="stopVal"/>
-        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="$exp_text" valType="str" updates="set every repeat" name="text"/>
-        <Param val="from exp settings" valType="str" updates="None" name="units"/>
-        <Param val="" valType="code" updates="None" name="validator"/>
-        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
-      </TextComponent>
       <TextComponent name="cueText" plugin="None">
         <Param val="white" valType="color" updates="constant" name="color"/>
         <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
@@ -423,7 +403,7 @@
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
         <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="3.0" valType="code" updates="None" name="startVal"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="10.0" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
@@ -438,9 +418,9 @@
         <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="# Determine which loop is currently running (Part 1 vs Part 2)&amp;#10;# currentLoop is set by Builder when inside a loop&amp;#10;loop_name = getattr(currentLoop, 'name', '')&amp;#10;&amp;#10;if loop_name == 'loopP1':&amp;#10;    t = part1[thisExp.p1_i]&amp;#10;    thisExp.p1_i += 1&amp;#10;elif loop_name == 'loopP2':&amp;#10;    t = part2[thisExp.p2_i]&amp;#10;    thisExp.p2_i += 1&amp;#10;else:&amp;#10;    # fallback (shouldn't happen if your flow is setup -&gt; loopP1 -&gt; loopP2)&amp;#10;    t = part1[thisExp.p1_i]&amp;#10;    thisExp.p1_i += 1&amp;#10;&amp;#10;f_left = float(t['f_left'])&amp;#10;f_right = float(t['f_right'])&amp;#10;cue_side = t['cue_side']&amp;#10;cue_freq = float(t['cue_freq'])&amp;#10;cue_text = t['cue_text']&amp;#10;exp_text = t['exp_text']" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="# Determine which loop is currently running (Part 1 vs Part 2)&amp;#10;# currentLoop is set by Builder when inside a loop&amp;#10;loop_name = getattr(currentLoop, 'name', '')&amp;#10;&amp;#10;if loop_name == 'loopP1':&amp;#10;    t = part1[thisExp.p1_i]&amp;#10;    thisExp.p1_i += 1&amp;#10;elif loop_name == 'loopP2':&amp;#10;    t = part2[thisExp.p2_i]&amp;#10;    thisExp.p2_i += 1&amp;#10;else:&amp;#10;    # fallback&amp;#10;    t = part1[thisExp.p1_i]&amp;#10;    thisExp.p1_i += 1&amp;#10;&amp;#10;#trial variables to be used by text + flicker&amp;#10;f_left = float(t['f_left'])&amp;#10;f_right = float(t['f_right'])&amp;#10;cue_side = t['cue_side']&amp;#10;cue_freq = float(t['cue_freq'])&amp;#10;cue_text = t['cue_text']&amp;#10;&amp;#10;#trigger setup&amp;#10;trigger_sent = False&amp;#10;trigger_code = trig_from_freq(cue_freq)" valType="extendedCode" updates="constant" name="Begin Routine"/>
         <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="# Sinusoidal luminance modulation per frame&amp;#10;# t is the routine time (seconds) in Builder&amp;#10;&amp;#10;aL = 0.5 * (1.0 + np.sin(2 * np.pi * f_left * t))&amp;#10;aR = 0.5 * (1.0 + np.sin(2 * np.pi * f_right * t))&amp;#10;&amp;#10;# convert 0..1 -&gt; -1..1 for rgb grayscale&amp;#10;vL = 2*aL - 1&amp;#10;vR = 2*aR - 1&amp;#10;&amp;#10;rectLeft.fillColor = (vL, vL, vL)&amp;#10;rectLeft.lineColor = rectLeft.fillColor&amp;#10;&amp;#10;rectRight.fillColor = (vR, vR, vR)&amp;#10;rectRight.lineColor = rectRight.fillColor" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="#send trigger&amp;#10;if (not trigger_sent) and (frameN == 0):&amp;#10;    send_trigger(trigger_code)&amp;#10;    trigger_sent = True&amp;#10;&amp;#10;# Sinusoidal luminance modulation per frame&amp;#10;# t is the routine time (seconds) in Builder&amp;#10;&amp;#10;aL = 0.5 * (1.0 + np.sin(2 * np.pi * f_left * t))&amp;#10;aR = 0.5 * (1.0 + np.sin(2 * np.pi * f_right * t))&amp;#10;&amp;#10;# convert 0..1 -&gt; -1..1 for rgb grayscale&amp;#10;vL = 2*aL - 1&amp;#10;vR = 2*aR - 1&amp;#10;&amp;#10;rectLeft.fillColor = (vL, vL, vL)&amp;#10;rectLeft.lineColor = rectLeft.fillColor&amp;#10;&amp;#10;rectRight.fillColor = (vR, vR, vR)&amp;#10;rectRight.lineColor = rectRight.fillColor" valType="extendedCode" updates="constant" name="Each Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
         <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
@@ -495,8 +475,8 @@
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
     </Routine>
-    <Routine name="setup">
-      <RoutineSettingsComponent name="setup" plugin="None">
+    <Routine name="finish">
+      <RoutineSettingsComponent name="finish" plugin="None">
         <Param val="none" valType="str" updates="None" name="backgroundFit"/>
         <Param val="" valType="str" updates="None" name="backgroundImg"/>
         <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
@@ -505,30 +485,40 @@
         <Param val="False" valType="bool" updates="None" name="disabled"/>
         <Param val="" valType="code" updates="None" name="durationEstim"/>
         <Param val="False" valType="code" updates="None" name="forceNonSlip"/>
-        <Param val="setup" valType="code" updates="None" name="name"/>
+        <Param val="finish" valType="code" updates="None" name="name"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="constant" name="skipIf"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
-      <CodeComponent name="makeSchedule" plugin="None">
-        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="import numpy as np&amp;#10;import pandas as pd&amp;#10;import random&amp;#10;&amp;#10;# ---- load freqs from CSV ----&amp;#10;freq_df = pd.read_csv('freqs_6_15.csv')  # file in same folder as .psyexp&amp;#10;freq_list = [float(x) for x in freq_df['freq'].tolist()]&amp;#10;assert len(freq_list) == 10, &quot;Expected 10 freqs (6..15).&quot;&amp;#10;&amp;#10;# ---- build part 1 ----&amp;#10;freqs = freq_list[:]&amp;#10;random.shuffle(freqs)&amp;#10;&amp;#10;# pair adjacent items -&gt; 5 pairs&amp;#10;pairs = [(freqs[i], freqs[i+1]) for i in range(0, len(freqs), 2)]&amp;#10;&amp;#10;part1 = []&amp;#10;for i, (a, b) in enumerate(pairs):&amp;#10;    # random assign which is left/right&amp;#10;    if random.random() &lt; 0.5:&amp;#10;        f_left, f_right = a, b&amp;#10;    else:&amp;#10;        f_left, f_right = b, a&amp;#10;&amp;#10;    cue_side = random.choice(['L', 'R'])&amp;#10;    cue_freq = f_left if cue_side == 'L' else f_right&amp;#10;    cue_text = '←' if cue_side == 'L' else '→'&amp;#10;    exp_text = f&quot;NEXT: {cue_freq:g} Hz ({'LEFT' if cue_side=='L' else 'RIGHT'})&quot;&amp;#10;&amp;#10;    part1.append({&amp;#10;        'trial_id': i+1,&amp;#10;        'f_left': f_left,&amp;#10;        'f_right': f_right,&amp;#10;        'cue_side': cue_side,&amp;#10;        'cue_freq': cue_freq,&amp;#10;        'cue_text': cue_text,&amp;#10;        'exp_text': exp_text,&amp;#10;    })&amp;#10;&amp;#10;random.shuffle(part1)&amp;#10;&amp;#10;# ---- build part 2: swap sides from part 1; re-randomize cue side ----&amp;#10;part2 = []&amp;#10;for t in part1:&amp;#10;    f_left = t['f_right']&amp;#10;    f_right = t['f_left']&amp;#10;    cue_side = random.choice(['L', 'R'])&amp;#10;    cue_freq = f_left if cue_side == 'L' else f_right&amp;#10;    cue_text = '←' if cue_side == 'L' else '→'&amp;#10;    exp_text = f&quot;NEXT: {cue_freq:g} Hz ({'LEFT' if cue_side=='L' else 'RIGHT'})&quot;&amp;#10;&amp;#10;    part2.append({&amp;#10;        'trial_id': t['trial_id'],&amp;#10;        'f_left': f_left,&amp;#10;        'f_right': f_right,&amp;#10;        'cue_side': cue_side,&amp;#10;        'cue_freq': cue_freq,&amp;#10;        'cue_text': cue_text,&amp;#10;        'exp_text': exp_text,&amp;#10;    })&amp;#10;&amp;#10;random.shuffle(part2)&amp;#10;&amp;#10;# indices used by the two loops&amp;#10;thisExp.p1_i = 0&amp;#10;thisExp.p2_i = 0" valType="extendedCode" updates="constant" name="Begin Experiment"/>
-        <Param val="/* Syntax Error: Fix Python code */" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
-        <Param val="Py" valType="str" updates="None" name="Code Type"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End JS Routine"/>
-        <Param val="" valType="extendedCode" updates="constant" name="End Routine"/>
+      <TextComponent name="text_finish" plugin="None">
+        <Param val="white" valType="color" updates="constant" name="color"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="makeSchedule" valType="code" updates="None" name="name"/>
-      </CodeComponent>
+        <Param val="False" valType="code" updates="constant" name="draggable"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="None" valType="str" updates="constant" name="flip"/>
+        <Param val="Arial" valType="str" updates="constant" name="font"/>
+        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
+        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
+        <Param val="text_finish" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="2.0" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="Finish" valType="str" updates="constant" name="text"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="code" updates="None" name="validator"/>
+        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
+      </TextComponent>
     </Routine>
   </Routines>
   <Flow>
@@ -541,7 +531,7 @@
       <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
       <Param name="isTrials" updates="None" val="True" valType="bool"/>
       <Param name="loopType" updates="None" val="random" valType="str"/>
-      <Param name="nReps" updates="None" val="5" valType="num"/>
+      <Param name="nReps" updates="None" val="10" valType="num"/>
       <Param name="name" updates="None" val="loopP1" valType="code"/>
       <Param name="random seed" updates="None" val="" valType="code"/>
     </LoopInitiator>
@@ -556,7 +546,7 @@
       <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
       <Param name="isTrials" updates="None" val="True" valType="bool"/>
       <Param name="loopType" updates="None" val="random" valType="str"/>
-      <Param name="nReps" updates="None" val="5" valType="num"/>
+      <Param name="nReps" updates="None" val="10" valType="num"/>
       <Param name="name" updates="None" val="loopP2" valType="code"/>
       <Param name="random seed" updates="None" val="" valType="code"/>
     </LoopInitiator>
