@@ -11,10 +11,10 @@ from pathlib import Path
 samplingRate = 250 #Hz
 
 #file paths
-noGelRelaxed = pd.read_csv('./Recordings/No gel/Relaxed/UnicornRawDataRecorder_04_02_2026_15_07_130.csv')
-noGelStimulated = pd.read_csv('./Recordings/No gel/Stimulated/UnicornRawDataRecorder_04_02_2026_15_22_320.csv')
-gelRelaxed = pd.read_csv('./Recordings/With gel/Relaxed/UnicornRawDataRecorder_04_02_2026_16_04_170.csv')
-gelStimulated = pd.read_csv('./Recordings/With gel/Stimulated/UnicornRawDataRecorder_04_02_2026_16_07_110.csv')
+noGelRelaxed = pd.read_csv('./Recordings/Initial Recordings/No gel/Relaxed/UnicornRawDataRecorder_04_02_2026_15_07_130.csv')
+noGelStimulated = pd.read_csv('./Recordings/Initial Recordings/No gel/Stimulated/UnicornRawDataRecorder_04_02_2026_15_22_320.csv')
+gelRelaxed = pd.read_csv('./Recordings/Initial Recordings/With gel/Relaxed/UnicornRawDataRecorder_04_02_2026_16_04_170.csv')
+gelStimulated = pd.read_csv('./Recordings/Initial Recordings/With gel/Stimulated/UnicornRawDataRecorder_04_02_2026_16_07_110.csv')
 
 #drop unnecessary columns
 dropCols = [" ACC X", " ACC Y", " ACC Z", " GYR X", " GYR Y", " GYR Z", " BAT"]
