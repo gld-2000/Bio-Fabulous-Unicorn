@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 #Data analysis variables
 numHarmonics = 2    #The number of harmonics to consider for the CCA analysis
-freqsOfInterest = [6,7,8,9,10,11,12,13,14,15]  #SSVEP frequencies of interest
+freqsOfInterest = [5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15]  #SSVEP frequencies of interest
 
 trialDuration = 10.0
 
@@ -64,9 +64,14 @@ psds = []       #Takes shape of (n_frequencies, n_trials, n_ch, n_freq) in order
 freqs = []
 epochData = []  #epochData takes shape of [Event][EventIndex, Channels, Samples]
 
+#Full frequencies
 bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_05_03_2026_15_54_56.bdf",
                      ],
                      dtype = np.str_)
+#Half-frequencies
+# bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_05_03_2026_16_07_42.bdf",
+#                      ],
+#                      dtype = np.str_)
 
 #Import the data from each array
 for numSubject, path in enumerate(bdf_path):
@@ -203,7 +208,7 @@ fig, axs = plt.subplots(5,2)
 for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
     for trialNum in range(totalTrials):
         axs[i%5,i//5].scatter(freqsOfInterest, ccaScores[i,trialNum,:])
-    axs[i%5,i//5].set_title("Frequency: " + str(int(event)//10))
+    axs[i%5,i//5].set_title("Frequency: " + str(int(event)/10))
     axs[i%5,i//5].set_xlabel("Frequency (Hz)")
     axs[i%5,i//5].set_ylabel("Score")
     axs[i%5,i//5].set_ylim([0,0.6])
@@ -218,7 +223,7 @@ for trialNum in range(totalTrials):
     for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
         for channelNum in range(np.size(snrs, axis=2)):
             axs[i%5,i//5].plot(freqs[i,:], snrs[trialNum,i,channelNum,:])
-        axs[i%5,i//5].set_title("Frequency: " + str((int(event)//10)))
+        axs[i%5,i//5].set_title("Frequency: " + str((int(event)/10)))
         axs[i%5,i//5].set_xlabel("Frequency (Hz)")
         axs[i%5,i//5].set_ylabel("Relative Amp")
         axs[i%5,i//5].set_ylim([-1.5,35])
@@ -230,7 +235,7 @@ fig, axs = plt.subplots(5,2)
 for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
     for trialNum in range(totalTrials):
         axs[i%5,i//5].plot(freqs[i,:], np.mean(snrs[trialNum,i,:,:], axis=0))
-    axs[i%5,i//5].set_title("Frequency: " + str((int(event)//10)))
+    axs[i%5,i//5].set_title("Frequency: " + str((int(event)/10)))
     axs[i%5,i//5].set_xlabel("Frequency (Hz)")
     axs[i%5,i//5].set_ylabel("Mean Amplitude")
     axs[i%5,i//5].set_ylim([-1.5,45])

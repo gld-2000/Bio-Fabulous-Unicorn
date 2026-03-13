@@ -252,6 +252,7 @@ channelConfigs = headset.GetConfiguration()
 #print("Channels to be recorded:")
 for channel in channelConfigs.Channels:
     #Enable all EEG, disable all others
+    #TODO: Only include EEG channels from the occipital region
     if channel.Name.startswith("EEG"):
         channel.Enabled = True
     else:
