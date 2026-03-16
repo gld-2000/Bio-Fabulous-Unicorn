@@ -65,13 +65,18 @@ freqs = []
 epochData = []  #epochData takes shape of [Event][EventIndex, Channels, Samples]
 
 #Full frequencies
-bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_05_03_2026_15_54_56.bdf",
-                     ],
-                     dtype = np.str_)
-#Half-frequencies
-# bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_05_03_2026_16_07_42.bdf",
+# bdf_path = np.array([
+#                      r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_44_34.bdf",
+#                      r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_14_12_43.bdf"
 #                      ],
 #                      dtype = np.str_)
+
+#Half-frequencies
+bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_36_43.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_58_15.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_05_03_2026_16_07_42.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_12_03_2026_18_15_38.bdf"],
+                      dtype = np.str_)
 
 #Import the data from each array
 for numSubject, path in enumerate(bdf_path):
@@ -91,13 +96,33 @@ for numSubject, path in enumerate(bdf_path):
     raw.set_eeg_reference("average", verbose=False)
 
     # trigger code -> condition mapping
-    event_id = np.multiply(freqsOfInterest, 10) #Triggers were 10x of each frequency
+    trig_id = np.multiply(freqsOfInterest, 10).astype(int) #Triggers were 10x of each frequency
 
 
     # epoch 0..10s after each cue
     epochs = mne.Epochs(raw, events,
                         tmin=0.0, tmax=10.0,
                         baseline=None, preload=True, verbose=False)
+
+    epochsToDelete = []
+    keysToDelete = []
+    #Drop indices of events that are not in the target frequencies
+    #TODO: Fix the indexing in the loop for when an item is dropped (consider recording indexes and dropping them after the loop) 
+    for i in range(len(epochs)):
+        #Record the epoch index if its trigger code doesn't correspond to the target frequencies
+        if not (list(epochs[i].event_id.values())[0] in trig_id):
+            epochsToDelete.append(i)
+            keysToDelete.append(list(epochs[i].event_id.keys())[0])
+            print("Dropping epoch with trigger code: ", list(epochs[i].event_id.keys())[0])
+    print("File number: ", numSubject+1)
+    epochs.drop(epochsToDelete)
+    print(epochs.event_id)
+    
+    #Delete keys that are no longer present in the epochs structure
+    keysToDelete = list(dict.fromkeys(keysToDelete)) #Remove duplicates by converting to a dict and then back to a list
+    for i in range(len(keysToDelete)):
+        del epochs.event_id[keysToDelete[i]]
+    print(epochs.event_id)
 
     #PSD parameters
     tmin, tmax = 0.0, 10.0
@@ -106,15 +131,15 @@ for numSubject, path in enumerate(bdf_path):
     #Compute PSD and return data
     spectrum = []
     for i in epochs.event_id.keys():
-        spectrum.append(epochs[i].compute_psd(
-            method="welch",
-            n_fft=int(sfreq * (tmax - tmin)),
-            n_overlap=0,
-            tmin=tmin, tmax=tmax,
-            fmin=1, fmax=50,
-            window="boxcar",
-            verbose=False,
-        ))
+            spectrum.append(epochs[i].compute_psd(
+                method="welch",
+                n_fft=int(sfreq * (tmax - tmin)),
+                n_overlap=0,
+                tmin=tmin, tmax=tmax,
+                fmin=1, fmax=50,
+                window="boxcar",
+                verbose=False,
+            ))
 
     psdsTemp = []   #Will have shape (n_frequencies, n_trials, n_ch, n_freq) in order of frequencies
     freqsTemp = []
@@ -211,7 +236,7 @@ for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
     axs[i%5,i//5].set_title("Frequency: " + str(int(event)/10))
     axs[i%5,i//5].set_xlabel("Frequency (Hz)")
     axs[i%5,i//5].set_ylabel("Score")
-    axs[i%5,i//5].set_ylim([0,0.6])
+    #axs[i%5,i//5].set_ylim([0,0.6])
 fig.suptitle("CCA Scores")
 
 upperBound = 31
