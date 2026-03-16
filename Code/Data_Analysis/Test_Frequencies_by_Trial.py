@@ -65,18 +65,19 @@ freqs = []
 epochData = []  #epochData takes shape of [Event][EventIndex, Channels, Samples]
 
 #Full frequencies
-# bdf_path = np.array([
-#                      r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_44_34.bdf",
-#                      r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_14_12_43.bdf"
-#                      ],
-#                      dtype = np.str_)
+bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_05_03_2026_15_54_56.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_12_03_2026_17_47_44.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_12_03_2026_18_27_32.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_44_34.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_14_12_43.bdf"],
+                     dtype = np.str_)
 
 #Half-frequencies
-bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_36_43.bdf",
-                     r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_58_15.bdf",
-                     r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_05_03_2026_16_07_42.bdf",
-                     r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_12_03_2026_18_15_38.bdf"],
-                      dtype = np.str_)
+# bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_05_03_2026_16_07_42.bdf",
+#                      r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_12_03_2026_18_15_38.bdf",
+#                      r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_36_43.bdf",
+#                      r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_58_15.bdf"],
+#                       dtype = np.str_)
 
 #Import the data from each array
 for numSubject, path in enumerate(bdf_path):
