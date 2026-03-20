@@ -71,7 +71,7 @@ bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p0\5.3.GavinUnic
                      r".\Recordings\Flicker recordings\SinPanel\p0\12.3.HelenaUnicornRawDataRecorder_12_03_2026_18_27_32.bdf",
                      r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_44_34.bdf",
                      r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_14_12_43.bdf",
-                     r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_16_29_33.bdf"
+                     r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_16_29_33.bdf",
                      r".\Recordings\Flicker recordings\SinPanel\p0\18.3.GaelUnicornRawDataRecorder_18_03_2026_14_38_19.bdf",
                      r".\Recordings\Flicker recordings\SinPanel\p0\18.3.GavinUnicornRawDataRecorder_18_03_2026_15_45_00.bdf"
                      ],
@@ -82,7 +82,7 @@ half_freqs_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\5.3.Ga
                             r".\Recordings\Flicker recordings\SinPanel\p5\12.3.HelenaUnicornRawDataRecorder_12_03_2026_18_15_38.bdf",
                             r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_36_43.bdf",
                             r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_58_15.bdf",
-                            r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_16_17_49.bdf"
+                            r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_16_17_49.bdf",
                             r".\Recordings\Flicker recordings\SinPanel\p5\18.3.GaelUnicornRawDataRecorder_18_03_2026_14_49_09.bdf",
                             r".\Recordings\Flicker recordings\SinPanel\p5\18.3.GavinUnicornRawDataRecorder_18_03_2026_15_36_35.bdf"
                             ],
@@ -343,8 +343,9 @@ for i, freq in enumerate(freqsOfInterest):
 print("Variance stat:", varianceStats.statistic, "| Variance p-value (<0.05 means we should set ANOVA equal_var to False, True otherwise):", varianceStats.pvalue)
 
 #Perform ANOVA
-anovaFStat, anovaPStat = scipy.stats.kruskal(*[orderedCCAScores[i] for i in range(len(freqsOfInterest))],
-                                             nan_policy = 'raise')
+anovaFStat, anovaPStat = scipy.stats.f_oneway(*[orderedCCAScores[i] for i in range(len(freqsOfInterest))],
+                                              equal_var = False,
+                                              nan_policy = 'raise')
 print("Kruskal-Wallis analysis: F-Stat:", anovaFStat, "P-stat (<0.05 indicates significant difference between distributions):", anovaPStat)
 
 plt.show()
