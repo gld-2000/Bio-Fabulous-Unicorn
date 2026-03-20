@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.cross_decomposition import CCA
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
+import scipy
 
 
 #Data analysis variables
@@ -65,22 +66,38 @@ freqs = []
 epochData = []  #epochData takes shape of [Event][EventIndex, Channels, Samples]
 
 #Full frequencies
-bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_05_03_2026_15_54_56.bdf",
-                     r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_12_03_2026_17_47_44.bdf",
-                     r".\Recordings\Flicker recordings\SinPanel\p0\UnicornRawDataRecorder_12_03_2026_18_27_32.bdf",
+bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p0\5.3.GavinUnicornRawDataRecorder_05_03_2026_15_54_56.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\12.3.HelenaUnicornRawDataRecorder_12_03_2026_17_47_44.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\12.3.HelenaUnicornRawDataRecorder_12_03_2026_18_27_32.bdf",
                      r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_44_34.bdf",
-                     r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_14_12_43.bdf"],
+                     r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_14_12_43.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\13.3.MarceloUnicornRawDataRecorder_13_03_2026_16_29_33.bdf"
+                     r".\Recordings\Flicker recordings\SinPanel\p0\18.3.GaelUnicornRawDataRecorder_18_03_2026_14_38_19.bdf",
+                     r".\Recordings\Flicker recordings\SinPanel\p0\18.3.GavinUnicornRawDataRecorder_18_03_2026_15_45_00.bdf"
+                     ],
                      dtype = np.str_)
 
 #Half-frequencies
-# bdf_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_05_03_2026_16_07_42.bdf",
-#                      r".\Recordings\Flicker recordings\SinPanel\p5\UnicornRawDataRecorder_12_03_2026_18_15_38.bdf",
-#                      r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_36_43.bdf",
-#                      r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_58_15.bdf"],
-#                       dtype = np.str_)
+half_freqs_path = np.array([r".\Recordings\Flicker recordings\SinPanel\p5\5.3.GavinUnicornRawDataRecorder_05_03_2026_16_07_42.bdf",
+                            r".\Recordings\Flicker recordings\SinPanel\p5\12.3.HelenaUnicornRawDataRecorder_12_03_2026_18_15_38.bdf",
+                            r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_36_43.bdf",
+                            r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_13_58_15.bdf",
+                            r".\Recordings\Flicker recordings\SinPanel\p5\13.3.MarceloUnicornRawDataRecorder_13_03_2026_16_17_49.bdf"
+                            r".\Recordings\Flicker recordings\SinPanel\p5\18.3.GaelUnicornRawDataRecorder_18_03_2026_14_49_09.bdf",
+                            r".\Recordings\Flicker recordings\SinPanel\p5\18.3.GavinUnicornRawDataRecorder_18_03_2026_15_36_35.bdf"
+                            ],
+                            dtype = np.str_)
+
+numFullFrequencyFiles = len(bdf_path)
+print("Number of recordings for full frequencies:", numFullFrequencyFiles)
+numHalfFrequencyFiles = len(half_freqs_path)
+print("Number of recordings for half frequencies:", numHalfFrequencyFiles)
+
+bdf_path = np.append(bdf_path, half_freqs_path)
 
 #Import the data from each array
 for numSubject, path in enumerate(bdf_path):
+    print("File number: ", numSubject+1)
     raw = mne.io.read_raw_bdf(bdf_path[numSubject], preload=True, verbose=False)
 
     # --- events from Status (do this before dropping Status) ---
@@ -108,22 +125,18 @@ for numSubject, path in enumerate(bdf_path):
     epochsToDelete = []
     keysToDelete = []
     #Drop indices of events that are not in the target frequencies
-    #TODO: Fix the indexing in the loop for when an item is dropped (consider recording indexes and dropping them after the loop) 
     for i in range(len(epochs)):
         #Record the epoch index if its trigger code doesn't correspond to the target frequencies
         if not (list(epochs[i].event_id.values())[0] in trig_id):
             epochsToDelete.append(i)
             keysToDelete.append(list(epochs[i].event_id.keys())[0])
             print("Dropping epoch with trigger code: ", list(epochs[i].event_id.keys())[0])
-    print("File number: ", numSubject+1)
     epochs.drop(epochsToDelete)
-    print(epochs.event_id)
     
     #Delete keys that are no longer present in the epochs structure
     keysToDelete = list(dict.fromkeys(keysToDelete)) #Remove duplicates by converting to a dict and then back to a list
     for i in range(len(keysToDelete)):
         del epochs.event_id[keysToDelete[i]]
-    print(epochs.event_id)
 
     #PSD parameters
     tmin, tmax = 0.0, 10.0
@@ -164,6 +177,8 @@ for numSubject, path in enumerate(bdf_path):
         epochData = np.array(tempEpochData)
     else:
         epochData = np.append(epochData, tempEpochData, axis=1)
+    
+    print("///////////////////////////")
 
 print("psds shape:", np.shape(psds), "freqs shape:", np.shape(freqs))
 
@@ -198,75 +213,101 @@ snrs = np.array(snrs)
 
 print("snrs shape:", np.shape(snrs))
 
+print("epochData Shape:", np.shape(epochData))
 
-#Create an array to store the number of correct classifications for each window size and event
-#Takes shape of [TrialType, trialNum][Scores]
-ccaScores = np.empty((len(epochs.event_id.keys()), totalTrials, len(freqsOfInterest)))       #Jagged list containing the CCA scores for every classificaiton that was performed
+#Create an array to store the CCA scores for each frequency at each trial
+numWindows =  (int(trialDuration)//int(subWindowSize))-1
+#Takes shape of [TrialType, trialNum, windowNum, Scores]
+ccaScores = np.empty((len(epochData), totalTrials, numWindows, len(freqsOfInterest)))
 
 #Analyze data using CCA
 #Analyze each trial
-for i in range(len(epochs.event_id.keys())):
+for i in range(len(epochData)):
     #Determine length of array
     (_,_,dataLength) = np.shape(epochData[i])
     #Generate a new reference for each window size
     referenceWaves = []
-    scansPerWindow = int(np.ceil(trialDuration * 250))
+    scansPerWindow = int(np.ceil(subWindowSize * 250))
     for f in freqsOfInterest:
-        referenceWaves.append(generate_reference(f, 250, np.ceil(trialDuration*250) / 250, numHarmonics))
-    #Analyze the whole trial window at once
+        referenceWaves.append(generate_reference(f, 250, np.ceil(subWindowSize*250) / 250, numHarmonics))
     for trialNum in range(totalTrials):
-        scores = detect_ssvep(epochData[i,trialNum,:,1:], referenceWaves, freqsOfInterest)
-        #result = classifyFromScores(scores, freqsOfInterest)
-        ccaScores[i,trialNum] = scores
+        #Analyze the trial sub-windows, discarding the first one
+        for idx, start in enumerate(range(int(np.ceil(stepSize * 250)), dataLength, scansPerWindow)):
+            end = start + int(np.ceil(subWindowSize * 250))
+            if end < dataLength:
+                scores = detect_ssvep(epochData[i,trialNum,:,start:end], referenceWaves, freqsOfInterest)
+                ccaScores[i,trialNum,idx] = scores
 
-
+print("CCAScores shape:", np.shape(ccaScores))
 
 ##Display results
 
-#Print results
-# for i, event in enumerate(epochs.event_id.keys().keys()):
-#     print("Frequency: ", event)
-#     for j, windowSize in enumerate(windowSizes):
-#         print("  Window Size: ", windowSize, "s - Accuracy: ", numCorrect[i,j], "/", totalWindows[i,j], " (", accuracy[i,j], "%)")
-
 #Plot average score vs window size for each frequency in each event
-fig, axs = plt.subplots(5,2)
-for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
-    for trialNum in range(totalTrials):
-        axs[i%5,i//5].scatter(freqsOfInterest, ccaScores[i,trialNum,:])
-    axs[i%5,i//5].set_title("Frequency: " + str(int(event)/10))
-    axs[i%5,i//5].set_xlabel("Frequency (Hz)")
-    axs[i%5,i//5].set_ylabel("Score")
-    #axs[i%5,i//5].set_ylim([0,0.6])
-fig.suptitle("CCA Scores")
-
-upperBound = 31
-lowerBound = 5
-
-#Plot PSD channels for all trials
-for trialNum in range(totalTrials):
+for fileSplit in (1,0):
     fig, axs = plt.subplots(5,2)
-    for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
-        for channelNum in range(np.size(snrs, axis=2)):
-            axs[i%5,i//5].plot(freqs[i,:], snrs[trialNum,i,channelNum,:])
-        axs[i%5,i//5].set_title("Frequency: " + str((int(event)/10)))
+    for i, event in enumerate(freqsOfInterest[fileSplit::2]):  #For each frequency
+        for windowNum in range(numWindows):
+            if fileSplit == 1:
+                for trialNum in range(numFullFrequencyFiles * 2):
+                    axs[i%5,i//5].scatter(freqsOfInterest, ccaScores[i,trialNum,windowNum,:])
+            else:
+                for trialNum in range(numFullFrequencyFiles * 2, totalTrials):
+                    axs[i%5,i//5].scatter(freqsOfInterest, ccaScores[i,trialNum,windowNum,:])
+        axs[i%5,i//5].set_title("Frequency: " + str(event))
         axs[i%5,i//5].set_xlabel("Frequency (Hz)")
-        axs[i%5,i//5].set_ylabel("Relative Amp")
-        axs[i%5,i//5].set_ylim([-1.5,35])
-        axs[i%5,i//5].set_xlim([lowerBound,upperBound])
-    fig.suptitle("Power Spectral Density: Trial " + str(trialNum+1))
+        axs[i%5,i//5].set_ylabel("Score")
+        axs[i%5,i//5].set_ylim([0,0.9])
+    fig.suptitle("CCA Scores")
 
-#Plot PSD channels for both trials (averaging across channels for each trial)
-fig, axs = plt.subplots(5,2)
-for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
-    for trialNum in range(totalTrials):
-        axs[i%5,i//5].plot(freqs[i,:], np.mean(snrs[trialNum,i,:,:], axis=0))
-    axs[i%5,i//5].set_title("Frequency: " + str((int(event)/10)))
-    axs[i%5,i//5].set_xlabel("Frequency (Hz)")
-    axs[i%5,i//5].set_ylabel("Mean Amplitude")
-    axs[i%5,i//5].set_ylim([-1.5,45])
-    axs[i%5,i//5].set_xlim([lowerBound,upperBound])
-fig.suptitle("Power Spectral Density (Channel Averaged)")
+#Create a new array that has the CCA scores stored in the order of frequencies
+orderedCCAScores = np.empty((len(freqsOfInterest), (numFullFrequencyFiles + numHalfFrequencyFiles)*2*numWindows), )
+idx = 0
+for isWholeNum in (1,0):
+    for i, event in enumerate(freqsOfInterest[isWholeNum::2]):  #For each frequency
+        orderedCCAScores[i*2+isWholeNum, :] = np.ravel(ccaScores[i,:,:,i*2+isWholeNum])   #Reorder the CCA scores in order of 
+print("Ordered CCA Scores shape:", np.shape(orderedCCAScores))
+
+#Plot histograms of the CCA score that corresponds to the frequency of stimulation
+for isWholeNum in (1,0):
+    fig, axs = plt.subplots(5,2)
+    for i, event in enumerate(freqsOfInterest[isWholeNum::2]):  #For each frequency
+        axs[i%5,i//5].hist(np.ravel(ccaScores[i,:,:,(i*2+isWholeNum)]))  #Takes shape of [TrialType, trialNum][Scores]
+        axs[i%5,i//5].set_title("Frequency: " + str(event))
+        axs[i%5,i//5].set_xlabel("CCA Score")
+        axs[i%5,i//5].set_ylabel("# of Trials")
+        axs[i%5,i//5].set_xlim([0,0.9])
+        axs[i%5,i//5].set_ylim([0,46])
+    fig.suptitle("CCA Scores")
+
+# upperBound = 31
+# lowerBound = 5
+
+# #Plot PSD channels for all trials
+#TODO: Complete this to make it accurate
+# for isWholeNum in (1,0):
+#     for trialNum in range(totalTrials):
+#         fig, axs = plt.subplots(5,2)
+#         for i, event in enumerate(freqsOfInterest[isWholeNum::2]):  #For each frequency
+#             for channelNum in range(np.size(snrs, axis=2)):
+#                 axs[i%5,i//5].plot(freqs[i,:], snrs[trialNum,i,channelNum,:])
+#             axs[i%5,i//5].set_title("Frequency: " + str(event))
+#             axs[i%5,i//5].set_xlabel("Frequency (Hz)")
+#             axs[i%5,i//5].set_ylabel("Relative Amp")
+#             axs[i%5,i//5].set_ylim([-1.5,35])
+#             axs[i%5,i//5].set_xlim([lowerBound,upperBound])
+#         fig.suptitle("Power Spectral Density: Trial " + str(trialNum+1))
+
+# #Plot PSD channels for both trials (averaging across channels for each trial)
+# fig, axs = plt.subplots(5,2)
+# for i, event in enumerate(epochs.event_id.keys()):  #For each frequency
+#     for trialNum in range(totalTrials):
+#         axs[i%5,i//5].plot(freqs[i,:], np.mean(snrs[trialNum,i,:,:], axis=0))
+#     axs[i%5,i//5].set_title("Frequency: " + str((int(event)/10)))
+#     axs[i%5,i//5].set_xlabel("Frequency (Hz)")
+#     axs[i%5,i//5].set_ylabel("Mean Amplitude")
+#     axs[i%5,i//5].set_ylim([-1.5,45])
+#     axs[i%5,i//5].set_xlim([lowerBound,upperBound])
+# fig.suptitle("Power Spectral Density (Channel Averaged)")
 
 # #Plot score variance vs window size for each frequency in each event
 # fig, axs = plt.subplots(5,2)
@@ -286,5 +327,24 @@ fig.suptitle("Power Spectral Density (Channel Averaged)")
 #     axs = plt.gca()
 #     axs.set_xlabel("Window Size (s)")
 #     axs.set_ylabel("Mean Score")
+
+#Test for normality
+normalityStats = scipy.stats.normaltest(orderedCCAScores,
+                                        axis=1,
+                                        nan_policy='raise')
+#Test for similar variances
+varianceStats = scipy.stats.levene(*[orderedCCAScores[i] for i in range(len(freqsOfInterest))],
+                                   center='median',
+                                   nan_policy='raise')
+
+print("For the following tests, a p-value <0.05 indicates that the distribution is non-normal:")
+for i, freq in enumerate(freqsOfInterest):
+    print("Distribution for frequency:", freq, "| Normality stat:", normalityStats.statistic[i],"| Normality p-value:", normalityStats.pvalue[i])
+print("Variance stat:", varianceStats.statistic, "| Variance p-value (<0.05 means we should set ANOVA equal_var to False, True otherwise):", varianceStats.pvalue)
+
+#Perform ANOVA
+anovaFStat, anovaPStat = scipy.stats.kruskal(*[orderedCCAScores[i] for i in range(len(freqsOfInterest))],
+                                             nan_policy = 'raise')
+print("Kruskal-Wallis analysis: F-Stat:", anovaFStat, "P-stat (<0.05 indicates significant difference between distributions):", anovaPStat)
 
 plt.show()
