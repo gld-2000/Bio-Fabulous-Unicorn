@@ -45,7 +45,7 @@
     <Param val="False" valType="bool" updates="None" name="elSimMode"/>
     <Param val="RIGHT_EYE" valType="str" updates="None" name="elTrackEyes"/>
     <Param val="PUPIL_CR_TRACKING" valType="str" updates="None" name="elTrackingMode"/>
-    <Param val="Flashing_UDRL" valType="str" updates="None" name="expName"/>
+    <Param val="stimuli for datastream" valType="str" updates="None" name="expName"/>
     <Param val="" valType="str" updates="None" name="expVersion"/>
     <Param val="on Sync" valType="str" updates="None" name="exportHTML"/>
     <Param val="None" valType="str" updates="None" name="eyetracker"/>
@@ -331,7 +331,7 @@
       <CodeComponent name="code_flicker" plugin="None">
         <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
         <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
-        <Param val="import numpy as np&amp;#10;&amp;#10;# frequencies in Hz (sinusoidal luminance modulation)&amp;#10;freqs_hz = {&amp;#10;    'rectTop': 13.5,&amp;#10;    'rectBottom': 12.0,&amp;#10;    'rectLeft': 10.0,&amp;#10;    'rectRight': 8.5,&amp;#10;}&amp;#10;&amp;#10;rects = {}" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="import numpy as np&amp;#10;&amp;#10;# frequencies in Hz (sinusoidal luminance modulation)&amp;#10;freqs_hz = {&amp;#10;    'rectTop': 5.5,&amp;#10;    'rectBottom': 6.0,&amp;#10;    'rectLeft': 6.5,&amp;#10;    'rectRight': 7.0,&amp;#10;}&amp;#10;&amp;#10;rects = {}" valType="extendedCode" updates="constant" name="Begin Experiment"/>
         <Param val="flicker = {&quot;rectTop&quot;: {&quot;framesPerCycle&quot;: 4, &quot;color&quot;: &quot;cyan&quot;}, &quot;rectBottom&quot;: {&quot;framesPerCycle&quot;: 6, &quot;color&quot;: &quot;magenta&quot;}, &quot;rectLeft&quot;: {&quot;framesPerCycle&quot;: 8, &quot;color&quot;: &quot;yellow&quot;}, &quot;rectRight&quot;: {&quot;framesPerCycle&quot;: 10, &quot;color&quot;: &quot;red&quot;}};&amp;#10;rects = {};&amp;#10;" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
         <Param val="rects[&quot;rectTop&quot;] = rectTop;&amp;#10;rects[&quot;rectBottom&quot;] = rectBottom;&amp;#10;rects[&quot;rectLeft&quot;] = rectLeft;&amp;#10;rects[&quot;rectRight&quot;] = rectRight;&amp;#10;" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
         <Param val="rects['rectTop'] = rectTop&amp;#10;rects['rectBottom'] = rectBottom&amp;#10;rects['rectLeft'] = rectLeft&amp;#10;rects['rectRight'] = rectRight&amp;#10;&amp;#10;# record 5 seconds worth (or entire routine)&amp;#10;rec_v = {name: [] for name in freqs_hz.keys()}&amp;#10;rec_t = []" valType="extendedCode" updates="constant" name="Begin Routine"/>
