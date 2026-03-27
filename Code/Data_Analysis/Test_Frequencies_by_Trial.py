@@ -9,7 +9,7 @@ import scipy
 
 #Data analysis variables
 numHarmonics = 2    #The number of harmonics to consider for the CCA analysis
-freqsOfInterest = [5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15]  #SSVEP frequencies of interest
+freqsOfInterest = np.array([5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15])  #SSVEP frequencies of interest
 
 trialDuration = 10.0
 
@@ -328,6 +328,9 @@ for isWholeNum in (1,0):
 #     axs.set_xlabel("Window Size (s)")
 #     axs.set_ylabel("Mean Score")
 
+#Calculate CCA means
+medianValues = np.median(orderedCCAScores, axis=1)
+
 #Test for normality
 normalityStats = scipy.stats.normaltest(orderedCCAScores,
                                         axis=1,
@@ -339,13 +342,17 @@ varianceStats = scipy.stats.levene(*[orderedCCAScores[i] for i in range(len(freq
 
 print("For the following tests, a p-value <0.05 indicates that the distribution is non-normal:")
 for i, freq in enumerate(freqsOfInterest):
-    print("Distribution for frequency:", freq, "| Normality stat:", normalityStats.statistic[i],"| Normality p-value:", normalityStats.pvalue[i])
+    print("Distribution for frequency:", freq, "| Median:", medianValues[i], "| Normality stat:", normalityStats.statistic[i],"| Normality p-value:", normalityStats.pvalue[i])
 print("Variance stat:", varianceStats.statistic, "| Variance p-value (<0.05 means we should set ANOVA equal_var to False, True otherwise):", varianceStats.pvalue)
 
 #Perform ANOVA
 anovaFStat, anovaPStat = scipy.stats.f_oneway(*[orderedCCAScores[i] for i in range(len(freqsOfInterest))],
                                               equal_var = False,
                                               nan_policy = 'raise')
-print("Kruskal-Wallis analysis: F-Stat:", anovaFStat, "P-stat (<0.05 indicates significant difference between distributions):", anovaPStat)
+print("Welch's ANOVA analysis: F-Stat:", anovaFStat, "P-stat (<0.05 indicates significant difference between distributions):", anovaPStat)
+
+largestMeanIndices = np.flip(np.argsort(medianValues)[-4:])    #Stores the indices of the 4 greatest means
+print("Largest medians:", medianValues[largestMeanIndices])
+print("Corresponding frequencies:", freqsOfInterest[largestMeanIndices])
 
 plt.show()
