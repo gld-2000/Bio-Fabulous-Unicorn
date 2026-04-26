@@ -22,11 +22,11 @@ root.destroy()
 #open psychopy as child process
 psychopy_process = subprocess.Popen([
     r"C:\Program Files\PsychoPy\python.exe", #path to pyschopy's python
-    r'C:\Users\NTC\PsychoPy Experiments\Flashing Rectangles\stimuli for datastream.py' #path to psychopy experiment
+    r".\PsychoPy\Flickering Rectangles\stimuli_for_datastream_lastrun.py" #path to psychopy experiment
 ])
 
 # --- Give PsychoPy a moment to start up ---
-time.sleep(30)
+time.sleep(10)
 
 # Convert PsychoPy norm units to pixels
 def norm_to_px(norm_x, norm_y):
@@ -56,7 +56,7 @@ ONTO OLD DATASTREAM CODE
 """
 
 ## Relevant variables
-WINDOW_SIZE = 2    #Size of scrolling window to be measured (in seconds) (SHOULD BE EVENLY DIVISIBLE BY 0.04 to ensure that we have an even number of samples at 250Hz)
+WINDOW_SIZE = 2.0    #Size of scrolling window to be measured (in seconds) (SHOULD BE EVENLY DIVISIBLE BY 0.04 to ensure that we have an even number of samples at 250Hz)
 MEASUREMENT_INTERVAL = 0.5   #Time between measurements (in seconds) (SHOULD BE EVENLY DIVISIBLE BY 0.04 to ensure that we have an even number of samples at 250Hz)
 NUM_INTERVALS = int(WINDOW_SIZE // MEASUREMENT_INTERVAL)   #Number of intervals required to hold WINDOW_SIZE seconds of data
 
@@ -67,19 +67,19 @@ FREQ_LEFT  = 6.5 #Hz
 FREQ_RIGHT = 7 #Hz
 
 #Neutral / confidence gate parameters
-CCA_r_thresh = 0.25        # r is correlation coefficient
-CCA_margin_thresh = 0.05   # separation between best (r1) and 2nd-best (r2)
-dwell_n = 3            # consecutive updates required to move
+CCA_r_thresh = 0.30        # r is correlation coefficient
+CCA_margin_thresh = 0.02   # separation between best (r1) and 2nd-best (r2)
+dwell_n = 2            # consecutive updates required to move
 
 #Data analysis variables
 numHarmonics = 2    #The number of harmonics to consider for the CCA analysis
 freqsOfInterest = [FREQ_RIGHT, FREQ_LEFT, FREQ_DOWN, FREQ_UP]  #SSVEP frequencies of interest
 
 #Cursor movement variables
-CURSOR_SPEED   = 50    # how many pixels the cursor moves each step
+CURSOR_SPEED   = 10    # how many pixels the cursor moves each step
 # brush settings
 BRUSH_COLOR  = (30, 30, 200)  # blue
-BRUSH_RADIUS = 8              # size of the brush in pixels
+BRUSH_RADIUS = 4              # size of the brush in pixels
 # canvas size 
 CANVAS_WIDTH  = win_w #pixels
 CANVAS_HEIGHT = win_h #pixels
@@ -320,7 +320,8 @@ def updateDrawingWindow(freq, direction, cursor_x, cursor_y, r1=None, r2=None, s
 btAdapter = UnicornPy.GetBluetoothAdapterInfo()
 print("Bluetooth Adapter: ", btAdapter.Name)
 #If it is the correct bluetooth adapter and it has no problems, try to connect to the device
-if btAdapter.IsRecommendedDevice and (not btAdapter.HasProblem):
+#if btAdapter.IsRecommendedDevice and (not btAdapter.HasProblem):
+if True:
     headset = attemptConnection(HEADSET_SERIAL_NUMBER)
     #If the device did not successfully connect, exit the program
     if headset == None:
@@ -340,6 +341,14 @@ for channel in channelConfigs.Channels:
     #Enable all EEG, disable all others
     if channel.Name.startswith("EEG"):
         channel.Enabled = True
+    # if channel.Name.startswith("EEG 5"):
+    #     channel.Enabled = True
+    # elif channel.Name.startswith("EEG 6"):
+    #     channel.Enabled = True
+    # elif channel.Name.startswith("EEG 7"):
+    #     channel.Enabled = True
+    # elif channel.Name.startswith("EEG 8"):
+    #     channel.Enabled = True
     else:
         channel.Enabled = False
     #print(channel.Name, channel.Enabled)
@@ -395,14 +404,16 @@ ctypes.windll.user32.BringWindowToTop(hwnd)
 ctypes.windll.user32.SetForegroundWindow(hwnd)
 ctypes.windll.user32.AttachThreadInput(foreground_tid, current_tid, False)
 
-# Hide taskbar completely
-taskbar_hwnd = ctypes.windll.user32.FindWindowW("Shell_TrayWnd", None)
-SW_HIDE = 0
-SW_SHOW = 5
-ctypes.windll.user32.ShowWindow(taskbar_hwnd, SW_HIDE)
+
 
 #Set up a try/finally block to ensure that we stop acquisition and clear the buffer if the program terminates for any reason (including errors)
 try:
+    # Hide taskbar completely
+    taskbar_hwnd = ctypes.windll.user32.FindWindowW("Shell_TrayWnd", None)
+    SW_HIDE = 0
+    SW_SHOW = 5
+    ctypes.windll.user32.ShowWindow(taskbar_hwnd, SW_HIDE)
+    
     #Begin data acquisition on the headset
     headset.StartAcquisition(TEST_SIGNAL)
     
@@ -461,10 +472,10 @@ try:
         # 6) Timing
         end = time.perf_counter_ns()
         print("Time elapsed:", (end - start) * 1e-6, "ms")
-        start = time.perf_counter_ns()
 
         # 7) Acquire next chunk + slide window
         headset.GetData(scansPerInterval, dataBuffer, len(dataBuffer))
+        start = time.perf_counter_ns()
         new_block = np.frombuffer(dataBuffer, dtype=np.uint32).reshape(
             (headset.GetNumberOfAcquiredChannels(), -1), order='F'
         )
@@ -474,15 +485,6 @@ try:
 #Ensure the headset stops acquisition when the program terminates
 finally:
     
-    headset.StopAcquisition()
-    dataBuffer.clear()
-
-    #Plot the last-seen data for debugging purposes
-    # for i in range(headset.GetNumberOfAcquiredChannels()):
-    #     plt.plot(data[i,:])
-    # plt.show()
-
-    
     # Restore taskbar
     ctypes.windll.user32.ShowWindow(taskbar_hwnd, SW_SHOW)
 
@@ -490,3 +492,11 @@ finally:
     psychopy_process.terminate()
     psychopy_process.wait()
     print(f"PsychoPy terminated, return code: {psychopy_process.returncode}")
+
+    headset.StopAcquisition()
+    dataBuffer.clear()
+
+    #Plot the last-seen data for debugging purposes
+    # for i in range(headset.GetNumberOfAcquiredChannels()):
+    #     plt.plot(data[i,:])
+    # plt.show()
